@@ -1,0 +1,53 @@
+###########################Know-GRRF with classification################
+##aw is the exponential term of knowledge score, the parameter can be tuned using optimization methods or grid searching
+opt.fn<-function(q.norm, aw, y){
+  coefReg=q.norm^aw
+  candidate=list()
+  aic=c()
+  for (i in 1:10){  
+    RRF.data<-RRF(data, as.factor(y),mtry=dim(data)[2], coefReg = coefReg)
+    RF<-randomForest(data[RRF.data$feaSet], as.factor(y))
+    p1<-RF$votes[,2]
+    p1<-sapply(p1, function(x) ifelse(x==0, 1/(2*length(y)), ifelse(x==1, 1-1/(2*length(y)), x)))
+    l=sum(y*log(p1)+(1-y)*log(1-p1), na.rm=F)
+    aic[i]=-2*l+2*length(RRF.data$feaSet)
+    candidate[[i]]=RRF.data$feaSet
+  }
+  list(aic=mean(aic), min=min(aic), max=max(aic),candidate=candidate)
+}
+
+###We can use optimization to find out the exponential term "aw" that minimize AIC
+opt.aic<-function(imp.norm, aw, y){   ###imp.norm is the domain knowledge weights
+  coefReg=imp.norm^aw
+  candidate=list()
+  aic=c()
+  for (i in 1:10){  
+    RRF.data<-RRF(data, as.factor(y),mtry=dim(data)[2], coefReg = coefReg)
+    RF<-randomForest(data[RRF.data$feaSet], as.factor(y))
+    p1<-RF$votes[,2]
+    p1<-sapply(p1, function(x) ifelse(x==0, 1/(2*length(y)), ifelse(x==1, 1-1/(2*length(y)), x)))
+    l=sum(y*log(p1)+(1-y)*log(1-p1), na.rm=F)
+    aic[i]=-2*l+2*length(RRF.data$feaSet)    #####AIC
+  }
+  mean(aic)
+}
+opt1<-optimize(opt.aic, interval=c(0.1,5), imp.norm=q.norm, y=y)  ##we can then use the result of opt1 as aw in opt.fn()
+###otherwise grid search can be used for find a good value for aw
+               
+               
+
+############################################Know-GRRF for regression########################
+######## the difference of regression and classification is the objective function of AIC
+ opt.fn<-function(imp.norm, aw, y){
+  coefReg=imp.norm^aw
+  candidate=list()
+  aic=c()
+  for (i in 1:10){  
+    RRF.data<-RRF(data, y,mtry=dim(data)[2], coefReg = coefReg)
+    RF<-randomForest(data[RRF.data$feaSet], y)
+    mse<-mean((RF$predicted-y)^2)
+    aic[i]=dim(data)[1]*log(mse)+2*length(RRF.data$feaSet)   ######MSE with regularization
+    candidate[[i]]=RRF.data$feaSet
+  }
+  list(aic=mean(aic), min=min(aic), max=max(aic),candidate=candidate)
+}
