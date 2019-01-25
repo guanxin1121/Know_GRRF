@@ -1,0 +1,11 @@
+exportPattern("^[[:alpha:]]+")
+
+
+
+importFrom(randomForest, randomForest)
+importFrom(RRF, RRF)
+importFrom(PRROC, roc.curve)
+importFrom(MASS, stepAIC)
+importFrom(stats, glm, lm)
+importFrom("stats", "binomial", "predict")
+importFrom("utils", "flush.console", "write.csv")
